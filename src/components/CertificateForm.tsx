@@ -24,26 +24,37 @@ const CertificateForm = () => {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (cnpj.length < 14 || !email.includes('@')) {
-      return;
-    }
-    
+  
+    if (cnpj.length < 14 || !email.includes('@')) return;
+  
     setFormState(FormState.PROCESSING);
-    
-    // Simulate the certificate retrieval process
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 5;
-      setProgress(currentProgress);
-      
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setFormState(FormState.SUCCESS);
+  
+    try {
+      const response = await fetch('/api/certificados', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          cnpj: cnpj.replace(/\D/g, ''),  // envia apenas os dígitos
+          email: email.trim().toLowerCase()
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Erro ao chamar a API: ${response.status}`);
       }
-    }, 200);
+  
+      const result = await response.json();
+      console.log('Resposta da API:', result);
+  
+      setFormState(FormState.SUCCESS);
+    } catch (err) {
+      console.error(err);
+      setFormState(FormState.ERROR);
+    }
   };
 
   const formatCNPJ = (value: string) => {
